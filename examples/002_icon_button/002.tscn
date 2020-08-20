@@ -4,3 +4,5 @@
 
 [node name="ui" type="Node"]
 script = ExtResource( 1 )
+interface_file = "res://examples/002_icon_button/ui.xml"
+save_file = "res://examples/002_icon_button/out.tscn"

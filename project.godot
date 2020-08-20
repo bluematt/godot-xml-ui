@@ -8,9 +8,20 @@
 
 config_version=4
 
-_global_script_classes=[  ]
+_global_script_classes=[ {
+"base": "Node",
+"class": "Convert",
+"language": "GDScript",
+"path": "res://lib/convert.gd"
+}, {
+"base": "Node",
+"class": "Properties",
+"language": "GDScript",
+"path": "res://lib/properties.gd"
+} ]
 _global_script_class_icons={
-
+"Convert": "",
+"Properties": ""
 }
 
 [application]
