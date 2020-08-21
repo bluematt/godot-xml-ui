@@ -15,19 +15,25 @@ _global_script_classes=[ {
 "path": "res://lib/convert.gd"
 }, {
 "base": "Node",
+"class": "Elements",
+"language": "GDScript",
+"path": "res://lib/elements.gd"
+}, {
+"base": "Node",
 "class": "Properties",
 "language": "GDScript",
 "path": "res://lib/properties.gd"
 } ]
 _global_script_class_icons={
 "Convert": "",
+"Elements": "",
 "Properties": ""
 }
 
 [application]
 
 config/name="gui"
-run/main_scene="res://gui_generator.tscn"
+run/main_scene="res://dev/Test.tscn"
 config/icon="res://icon.png"
 
 [rendering]

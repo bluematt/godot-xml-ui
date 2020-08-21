@@ -156,11 +156,9 @@ const LINK_BUTTON := {
 	"underline": { "type": TYPE_INT, "literals": {
 		"always": LinkButton.UNDERLINE_MODE_ALWAYS,
 		"hover": LinkButton.UNDERLINE_MODE_ON_HOVER,
-		"on_hover": LinkButton.UNDERLINE_MODE_ON_HOVER,
 		"never": LinkButton.UNDERLINE_MODE_NEVER,
 	}},
 }
-
 
 const TEXTURE_BUTTON := {
 	"stretch_mode": { "type": TYPE_INT, "literals": {
@@ -173,7 +171,7 @@ const TEXTURE_BUTTON := {
 		"keep_aspect_covered": TextureButton.STRETCH_KEEP_ASPECT_COVERED,
 	}},
 	"texture_click_mask": PROPERTY_TYPE_BITMAP,
-	"texture_disabled	": PROPERTY_TYPE_TEXTURE,
+	"texture_disabled": PROPERTY_TYPE_TEXTURE,
 	"texture_focused": PROPERTY_TYPE_TEXTURE,
 	"texture_hover": PROPERTY_TYPE_TEXTURE,
 	"texture_normal": PROPERTY_TYPE_TEXTURE,
@@ -204,8 +202,6 @@ const VBOX_CONTAINER := {
 
 const CENTER_CONTAINER := {}
 
-const EDITOR_PROPERTY := {}
-
 const GRAPH_NODE := {
 	"overlay": { "type": TYPE_INT, "literals": {
 		"disabled": GraphNode.OVERLAY_DISABLED,
@@ -220,11 +216,7 @@ const MARGIN_CONTAINER := {}
 
 const PANEL_CONTAINER := {}
 
-#const SCRIPT_EDITOR := {}
-
 const SCROLL_CONTAINER := {}
-
-#const EDITOR_INSPECTOR := {}
 
 const SPLIT_CONTAINER := {
 	"dragger_visibility": { "type": TYPE_INT, "literals": {
@@ -325,25 +317,6 @@ const ACCEPT_DIALOG := {}
 
 const CONFIRMATION_DIALOG := {}
 
-const EDITOR_FILE_DIALOG := {
-	"access": { "type": TYPE_INT, "literals": {
-		"resources": EditorFileDialog.ACCESS_RESOURCES,
-		"userdata": EditorFileDialog.ACCESS_USERDATA,
-		"filesystem": EditorFileDialog.ACCESS_FILESYSTEM,
-	}},
-	"display_mode": { "type": TYPE_INT, "literals": {
-		"thumbnails": EditorFileDialog.DISPLAY_THUMBNAILS,
-		"list": EditorFileDialog.DISPLAY_LIST,
-	}},
-	"mode": { "type": TYPE_INT, "literals": {
-		"open_file": EditorFileDialog.MODE_OPEN_FILE,
-		"open_files": EditorFileDialog.MODE_OPEN_FILES,
-		"open_dir": EditorFileDialog.MODE_OPEN_DIR,
-		"open_any": EditorFileDialog.MODE_OPEN_ANY,
-		"save_file": EditorFileDialog.MODE_SAVE_FILE,
-	}},
-}
-
 const FILE_DIALOG := {
 	"access": { "type": TYPE_INT, "literals": {
 		"resources": FileDialog.ACCESS_RESOURCES,
@@ -352,18 +325,19 @@ const FILE_DIALOG := {
 	}},
 	"mode": { "type": TYPE_INT, "literals": {
 		"open_file": FileDialog.MODE_OPEN_FILE,
+			"file": FileDialog.MODE_OPEN_FILE, # alias
 		"open_files": FileDialog.MODE_OPEN_FILES,
+			"files": FileDialog.MODE_OPEN_FILES, # alias
 		"open_dir": FileDialog.MODE_OPEN_DIR,
+			"dir": FileDialog.MODE_OPEN_DIR, # alias
 		"open_any": FileDialog.MODE_OPEN_ANY,
+			"any": FileDialog.MODE_OPEN_ANY, # alias
 		"save_file": FileDialog.MODE_SAVE_FILE,
+			"save": FileDialog.MODE_SAVE_FILE, # alias
 	}},
 }
 
-const SCRIPT_CREATE_DIALOG := {}
-
 const RANGE := {}
-
-const EDITOR_SPIN_SLIDER := {}
 
 const PROGRESS_BAR := {}
 
@@ -396,9 +370,11 @@ const TEXTURE_PROGRESS := {
 		"bottom_to_top": TextureProgress.FILL_BOTTOM_TO_TOP,
 		"clockwise": TextureProgress.FILL_CLOCKWISE,
 		"counter_clockwise": TextureProgress.FILL_COUNTER_CLOCKWISE,
+			"anticlockwise": TextureProgress.FILL_COUNTER_CLOCKWISE,
 		"bilinear_left_right": TextureProgress.FILL_BILINEAR_LEFT_AND_RIGHT,
 		"bilinear_top_bottom": TextureProgress.FILL_BILINEAR_TOP_AND_BOTTOM,
 		"clockwise_counter_clockwise": TextureProgress.FILL_CLOCKWISE_AND_COUNTER_CLOCKWISE,
+			"clockwise_anticlockwise": TextureProgress.FILL_CLOCKWISE_AND_COUNTER_CLOCKWISE,
 	}},
 	"texture_over": PROPERTY_TYPE_TEXTURE,
 	"texture_progress": PROPERTY_TYPE_TEXTURE,
