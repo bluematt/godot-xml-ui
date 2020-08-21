@@ -112,7 +112,7 @@ func _parse_xml() -> void:
 					if  exposed_properties.has(attr_name):
 						var property_name = attr_name
 						var property_type = exposed_properties[attr_name]
-						var property_value = _convert_property_value(attr_value, property_type)
+						var property_value = Convert.xml_attr(attr_value, property_type)
 
 						if property_value == null:
 							var line := _parser.get_current_line()
@@ -152,7 +152,7 @@ func _parse_xml() -> void:
 											if node_property_mask.has(mask):
 												attribute_value += node_property_mask[mask]
 
-									var property_value = _convert_property_value(attribute_value, node_property_type)
+									var property_value = Convert.xml_attr(attribute_value, node_property_type)
 									new_node.set(node_property_name, property_value)
 
 									if node_property_calculated:
@@ -165,8 +165,6 @@ func _parse_xml() -> void:
 				# Self-closing elements do not have child nodes.
 				if not _parser.is_empty():
 					current_node = new_node
-#				else:
-#					current_node = current_node.get_parent()
 
 			# If the node is a closing tag, set the current node to the current
 			# node's parent.  This lets us validate the structure of the XML.
@@ -198,38 +196,6 @@ func _parse_xml() -> void:
 	if current_node != $GUI:
 		printerr("XML structure is incorrect.")
 		return
-
-const TYPE_MATERIAL := "Material"
-const TYPE_TEXTURE := "Texture"
-const TYPE_THEME := "Theme"
-const TYPE_VIDEO_STREAM := "VideoStream"
-
-func _convert_property_value(xml_value, property_type):
-	var converted_value
-
-	match property_type:
-		TYPE_NIL: converted_value = null
-		TYPE_BOOL: converted_value = bool(xml_value)
-		TYPE_INT: converted_value = int(xml_value)
-		TYPE_REAL: converted_value = float(xml_value)
-		TYPE_STRING: converted_value = str(xml_value)
-		TYPE_VECTOR2: converted_value = Convert.xml_attr_to_vector2(xml_value)
-		TYPE_RECT2: converted_value = Convert.xml_attr_to_rect2(xml_value)
-		#
-		TYPE_OBJECT: pass # We handle objects separately below depending on their actual
-						 # (named) type.
-		#
-		TYPE_STRING_ARRAY: converted_value = Convert.xml_attr_to_poolstringarray(xml_value)
-		# Named object types
-		TYPE_MATERIAL: converted_value = load(str(xml_value))
-		TYPE_TEXTURE: converted_value = load(str(xml_value))
-		TYPE_THEME: converted_value = load(str(xml_value))
-		TYPE_VIDEO_STREAM: converted_value = load(str(xml_value))
-		_:
-			printerr("Don't know what to do with value!", xml_value, property_type)
-			converted_value = str(xml_value)
-
-	return converted_value
 
 const ZERO := Control.ANCHOR_BEGIN
 const FULL := Control.ANCHOR_END
