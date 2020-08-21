@@ -76,7 +76,7 @@ func _parse_xml() -> void:
 				# onto the next one.
 				if not new_node:
 					var line := _parser.get_current_line()
-					printerr("[Line %d] Unsupported tag <%s>" % [line, tag])
+					printerr("[Line %d] Warning: Unsupported tag <%s>; ignored" % [line, tag])
 					continue
 
 				# Get the class of the node.  This is used for capability
@@ -108,28 +108,36 @@ func _parse_xml() -> void:
 					var attr_name := _parser.get_attribute_name(attr_index)
 					var attr_value := _parser.get_attribute_value(attr_index)
 
+					var attr_accepted := false
+					var attr_handled := false
+
 					# Compare the XML attribute with the exposed properties.
+					# This handles the cases where the attribute is the same
+					# name as the property, and the value is a simple value.
 					if  exposed_properties.has(attr_name):
-						var property_name = attr_name
+						attr_accepted = true
 						var property_type = exposed_properties[attr_name]
 						var property_value = Convert.xml_attr(attr_value, property_type)
 
-						if property_value == null:
-							var line := _parser.get_current_line()
-							printerr("[Line %d] Could not parse attribute <%s %s=\"%s\"/>" % [line, tag, attr_name, attr_value])
-						else:
-							new_node.set(property_name, property_value)
-					else:
-						var line := _parser.get_current_line()
-						printerr("[Line %d] Unexpected attribute <%s %s=\"%s\"/>" % [line, tag, attr_name, attr_value])
+						if property_value != null:
+							new_node.set(attr_name, property_value)
+							attr_handled = true
 
-					# Check to see if the node's class is in the custom properties list.
+					# Check to see if the node's class is in the custom
+					# properties list.  If so, this means it's either:
+					# a) an aliased property, either for convenience or
+					#    because there's no direct property name (it's in a
+					#    subcategory);
+					# b) the format requires special handling (e.g. it's not
+					#    just a simple value.
 					if Elements.ELEMENTS.has(node_class):
+
 						# Loop over every class to see if there are custom properties for the current class hierarchy.
 						for current_node_class in Elements.ELEMENTS:
 							if new_node.is_class(current_node_class):
 								var node_properties:Dictionary = Elements.ELEMENTS[current_node_class]
 								if node_properties.has(attr_name):
+									attr_accepted = true
 									var node_property:Dictionary = node_properties[attr_name]
 									var node_property_name:String = node_property['property'] if node_property.has('property') else attr_name
 									var node_property_type = node_property['type'] if node_property.has('type') else 'String'
@@ -154,13 +162,21 @@ func _parse_xml() -> void:
 
 									var property_value = Convert.xml_attr(attribute_value, node_property_type)
 									new_node.set(node_property_name, property_value)
+									attr_handled = true
 
 									if node_property_calculated:
 										call("_calculate_%s" % node_property_name, new_node, attribute_value)
+										attr_handled = true
 
+					# We may not be able to handle an attribute.  If so, issue
+					# a warning.
+					if not attr_accepted:
+						var line := _parser.get_current_line()
+						printerr("[Line %d] Warning: Unknown attribute '%s' in <%s %s=\"%s\"/>; ignored" % [line, attr_name, tag, attr_name, attr_value])
 					else:
-						# The property is unknown, possibly aliased.
-						prints("UNKNOWN", new_node.name, attr_name, attr_value)
+						if not attr_handled:
+							var line := _parser.get_current_line()
+							printerr("[Line %d] Warning: Invalid attribute value '%s' in <%s %s=\"%s\"/>; ignored" % [line, attr_value, tag, attr_name, attr_value])
 
 				# Self-closing elements do not have child nodes.
 				if not _parser.is_empty():
