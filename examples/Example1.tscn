@@ -1,0 +1,30 @@
+[gd_scene load_steps=3 format=2]
+
+[ext_resource path="res://XmlUi.gd" type="Script" id=1]
+
+[sub_resource type="GDScript" id=1]
+script/source = "extends Node2D
+
+# ---------------------------------------------------------
+# XML UI example 1 - Basic instancing
+#
+# The control node has a pre-defined `ui_xml_file`
+# property.  This sets the location of the XML file.
+# All this does is loads the XML file and starts the
+# process to generate the UI.
+# ---------------------------------------------------------
+
+func _ready() -> void:
+	$Control.generate_ui()
+"
+
+[node name="Example1" type="Node2D"]
+script = SubResource( 1 )
+
+[node name="Control" type="Control" parent="."]
+margin_right = 40.0
+margin_bottom = 40.0
+script = ExtResource( 1 )
+__meta__ = {
+"_edit_use_anchors_": false
+}

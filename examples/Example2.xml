@@ -1,0 +1,5 @@
+<vbox name="Buttons">
+    <button text="First"/>
+    <button text="Second"/>
+    <button text="Third"/>
+</vbox>

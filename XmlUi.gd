@@ -1,63 +1,37 @@
-extends Node
+class_name ControlXml
+extends Control
 
-#const PROPERTY_TYPES := [ "TYPE_NIL", "TYPE_BOOL", "TYPE_INT", "TYPE_REAL",
-#	"TYPE_STRING", "TYPE_VECTOR2", "TYPE_RECT2", "TYPE_VECTOR3", "TYPE_TRANSFORM2D",
-#	"TYPE_PLANE", "TYPE_QUAT", "TYPE_AABB", "TYPE_BASIS", "TYPE_TRANSFORM",
-#	"TYPE_COLOR", "TYPE_NODE_PATH", "TYPE_RID", "TYPE_OBJECT", "TYPE_DICTIONARY",
-#	"TYPE_ARRAY", "TYPE_RAW_ARRAY", "TYPE_INT_ARRAY", "TYPE_REAL_ARRAY",
-#	"TYPE_STRING_ARRAY", "TYPE_VECTOR2_ARRAY", "TYPE_VECTOR3_ARRAY",
-#	"TYPE_COLOR_ARRAY", "TYPE_MAX", ]
+signal control_added(control_node)
+signal completed(gui_node)
 
 # The XML file to parse (required).
-export (String, FILE, "*.xml") var interface_file
-# The Scene file to produce (optional).
-export (String, FILE, "*.tscn") var save_file
+export (String, FILE, "*.xml") var ui_xml_file
 
-# The XML parser object.
-onready var _parser := XMLParser.new()
-
-# The root GUI object.
-onready var _gui
-
-func _ready() -> void:
-	if not interface_file:
-		printerr("No interface_file")
-		return
-
-	# Prepare the scene.
-	var gui = Control.new()
-	gui.set_name("GUI")
-	add_child(gui, true)
-
-	_parse_xml()
-
-	if save_file:
-		var packed_scene := PackedScene.new()
-		if OK != packed_scene.pack(_gui):
-			printerr("Can not pack scene")
-			return
-
-		if OK != ResourceSaver.save(save_file, packed_scene):
-			printerr("Can not save scene to %s" % save_file)
-			return
-
-		if OK != get_tree().change_scene(save_file):
-			printerr("Can not preview scene %s" % save_file)
-			return
+# The root GUI object is the Control node that the script is attached to.
+onready var _gui := self as Control
 
 func _parse_xml() -> void:
-	printerr("WARNING: As of V3.2.2, Godot does not currently support line numbers in the XMLParser class.")
-	printerr("         Therefore line numbers for any errors may be incorrect.")
-	var current_node:Node = $GUI
+	assert(ui_xml_file, "UI XML file required")
 
-	if OK != _parser.open(interface_file):
-		printerr("Could not open XML file %s" % interface_file)
-		return
+	printerr("WARNING: As of v3.2.2, Godot does not currently support line numbers in the XMLParser class.")
+	printerr("         Therefore reported line numbers may be incorrect.")
 
-	while _parser.read() == OK:
-		var xml_node_type := _parser.get_node_type()
+	# The current node is set to the root node.
+	var current_node:Node = _gui
 
-		match xml_node_type:
+	# Reference to the last good node
+	var last_good_node = null
+	# Reference to the last good node's line
+	var last_good_line = null
+
+	# The XML parser object.
+	var parser := XMLParser.new()
+
+	assert(OK == parser.open(ui_xml_file), "Could not open UI XML file: '%s'" % ui_xml_file)
+
+	while parser.read() == OK:
+		var line := parser.get_current_line()
+		match parser.get_node_type():
 
 			# If there's no node, do nothing.
 			XMLParser.NODE_NONE:
@@ -67,7 +41,7 @@ func _parse_xml() -> void:
 			XMLParser.NODE_ELEMENT:
 
 				# Determine the node's tag.
-				var tag := _parser.get_node_name().to_lower()
+				var tag := parser.get_node_name().to_lower()
 
 				# Create a node based on the tag.
 				var new_node := _create_node(tag)
@@ -75,8 +49,7 @@ func _parse_xml() -> void:
 				# If we don't know what the current tag is, report it and move
 				# onto the next one.
 				if not new_node:
-					var line := _parser.get_current_line()
-					printerr("[Line %d] Warning: Unsupported tag <%s>; ignored" % [line, tag])
+					printerr("[Line %d] Warning: Ignoring unsupported tag <%s>" % [line, tag])
 					continue
 
 				# Get the class of the node.  This is used for capability
@@ -87,26 +60,22 @@ func _parse_xml() -> void:
 				new_node.name = node_class
 
 				# Override the name if there's a name attribute.
-				if _parser.has_attribute("name"):
-					new_node.name = _parser.get_named_attribute_value("name")
+				if parser.has_attribute("scene:name"):
+					new_node.name = parser.get_named_attribute_value("scene:name")
 
 				# Add the node to the current (parent) node.
 				current_node.add_child(new_node, true)
 
-				# We need a root node for all child nodes to be owned by, but not $GUI.
-				if not _gui:
-					_gui = new_node
-
-				if new_node != _gui:
-					new_node.owner = _gui
+				# If we save this to an external file, all nodes need an owner.
+				new_node.owner = _gui
 
 				# Get the list of default exposed properties for the node's class.
 				var exposed_properties = _get_exposed_properties(new_node)
 
 				# Get the XML attributes for the XML node.
-				for attr_index in _parser.get_attribute_count():
-					var attr_name := _parser.get_attribute_name(attr_index)
-					var attr_value := _parser.get_attribute_value(attr_index)
+				for attr_index in parser.get_attribute_count():
+					var attr_name := parser.get_attribute_name(attr_index)
+					var attr_value := parser.get_attribute_value(attr_index)
 
 					var attr_accepted := false
 					var attr_handled := false
@@ -171,78 +140,87 @@ func _parse_xml() -> void:
 					# We may not be able to handle an attribute.  If so, issue
 					# a warning.
 					if not attr_accepted:
-						var line := _parser.get_current_line()
 						printerr("[Line %d] Warning: Unknown attribute '%s' in <%s %s=\"%s\"/>; ignored" % [line, attr_name, tag, attr_name, attr_value])
 					else:
 						if not attr_handled:
-							var line := _parser.get_current_line()
 							printerr("[Line %d] Warning: Invalid attribute value '%s' in <%s %s=\"%s\"/>; ignored" % [line, attr_value, tag, attr_name, attr_value])
 
 				# Self-closing elements do not have child nodes.
-				if not _parser.is_empty():
+				if not parser.is_empty():
 					current_node = new_node
+
+				if new_node:
+					emit_signal("control_added", new_node)
 
 			# If the node is a closing tag, set the current node to the current
 			# node's parent.  This lets us validate the structure of the XML.
 			XMLParser.NODE_ELEMENT_END:
+				last_good_node = current_node
+				last_good_line = parser.get_current_line()
 				current_node = current_node.get_parent()
 
 			# Ingore text nodes.
 			XMLParser.NODE_TEXT:
 				pass
 
-			# Print comments to the console.
+			# Print comments to the output console.
 			XMLParser.NODE_COMMENT:
-				var line := _parser.get_current_line()
-				var comment:String = _parser.get_node_name()
+				var comment:String = parser.get_node_name()
 				print("[Line %d] Comment: %s" % [line, comment])
 
 			# Ignore CDATA.
 			XMLParser.NODE_CDATA:
 				pass
 
+			# Print errors about unknown nodes.
 			XMLParser.NODE_UNKNOWN:
-				var line := _parser.get_current_line()
-				var unknown := _parser.get_node_data()
+				var unknown := parser.get_node_data()
 				printerr("[Line %d] Unknown: %s" % [line, unknown])
 
 	# After we've parsed everything, we should get back to a state where the
 	# current node is the $GUI node.  If it's not, something went wrong with
 	# the structure of the XML.
-	if current_node != $GUI:
-		printerr("XML structure is incorrect.")
-		return
+	assert(current_node == _gui, 'XML is invalid (Last %s at %d)' % [last_good_node, last_good_line])
+#	if current_node != _gui:
+#		printerr("XML structure is incorrect.")
+#		return
+
+	emit_signal("completed", self)
 
 const ZERO := Control.ANCHOR_BEGIN
 const FULL := Control.ANCHOR_END
 const HALF := FULL * 0.5
 
+const ANCHORS := {
+		"topleft":     [ZERO, ZERO, ZERO, ZERO],
+		"topright":    [FULL, ZERO, FULL, ZERO],
+		"bottomright": [FULL, FULL, FULL, FULL],
+		"bottomleft":  [ZERO, FULL, ZERO, FULL],
+
+		"centerleft":   [ZERO, HALF, ZERO, HALF],
+		"centertop":    [HALF, ZERO, HALF, ZERO],
+		"centerright":  [FULL, HALF, FULL, HALF],
+		"centerbottom": [HALF, FULL, HALF, FULL],
+		"center":       [HALF, HALF, HALF, HALF],
+
+		"leftwide":    [ZERO, ZERO, ZERO, FULL],
+		"topwide":     [ZERO, ZERO, FULL, ZERO],
+		"rightwide":   [FULL, ZERO, FULL, FULL],
+		"bottomwide":  [ZERO, FULL, FULL, FULL],
+		"vcenterwide": [HALF, ZERO, HALF, FULL],
+		"hcenterwide": [ZERO, HALF, FULL, HALF],
+
+		"fullrect": [ZERO, ZERO, FULL, FULL],
+}
+
 # Calculate the anchors for a node based on a layout.
+# If the anchor is not recognised, keep the current anchors as-is.
 # The node seems to be passed by reference.
 func _calculate_layout(node:Control, xml_value:String) -> void:
 	var anchors := [node.anchor_left, node.anchor_top, node.anchor_right, node.anchor_bottom]
 
-	match str(xml_value):
-		"topleft":     anchors = [ZERO, ZERO, ZERO, ZERO]
-		"topright":    anchors = [FULL, ZERO, FULL, ZERO]
-		"bottomright": anchors = [FULL, FULL, FULL, FULL]
-		"bottomleft":  anchors = [ZERO, FULL, ZERO, FULL]
-
-		"centerleft":   anchors = [ZERO, HALF, ZERO, HALF]
-		"centertop":    anchors = [HALF, ZERO, HALF, ZERO]
-		"centerright":  anchors = [FULL, HALF, FULL, HALF]
-		"centerbottom": anchors = [HALF, FULL, HALF, FULL]
-		"center":       anchors = [HALF, HALF, HALF, HALF]
-
-		"leftwide":    anchors = [ZERO, ZERO, ZERO, FULL]
-		"topwide":     anchors = [ZERO, ZERO, FULL, ZERO]
-		"rightwide":   anchors = [FULL, ZERO, FULL, FULL]
-		"bottomwide":  anchors = [ZERO, FULL, FULL, FULL]
-		"vcenterwide": anchors = [HALF, ZERO, HALF, FULL]
-		"hcenterwide": anchors = [ZERO, HALF, FULL, HALF]
-
-		"fullrect": anchors = [ZERO, ZERO, FULL, FULL]
-		_: pass
+	if ANCHORS.has(xml_value):
+		anchors = ANCHORS[xml_value]
 
 	node.anchor_left = anchors[0]
 	node.anchor_top = anchors[1]
@@ -325,3 +303,85 @@ func _get_exposed_properties(node:Node) -> Dictionary:
 			exposed_properties[property.name] = property.type
 
 	return exposed_properties
+
+# Generate the UI on demand.
+func generate_ui():
+	_parse_xml()
+
+# Saves the resulting Control node and its dependents as a new scene.
+func save_scene(save_path:String):
+	assert(save_path, "GUI scene requires a save path")
+
+	var packed_scene := PackedScene.new()
+	assert (OK == packed_scene.pack(_gui), "Cannot pack GUI scene")
+
+	assert (OK == ResourceSaver.save(save_path, packed_scene), "Cannot save GUI scene to %s" % save_path)
+
+class Elements:
+	const ELEMENTS := {
+		"Node": Properties.NODE,
+		"CanvasItem": Properties.CANVAS_ITEM,
+		"Control": Properties.CONTROL,
+		"BaseButton": Properties.BASE_BUTTON,
+		"Button": Properties.BUTTON,
+		"CheckBox": Properties.CHECK_BOX,
+		"CheckButton": Properties.CHECK_BUTTON,
+		"ColorPickerButton": Properties.COLOR_PICKER_BUTTON,
+		"MenuButton": Properties.MENU_BUTTON,
+		"OptionButton": Properties.OPTION_BUTTON,
+		"ToolButton": Properties.TOOL_BUTTON,
+		"LinkButton": Properties.LINK_BUTTON,
+		"TextureButton": Properties.TEXTURE_BUTTON,
+		"ColorRect": Properties.COLOR_RECT,
+		"Container": Properties.CONTAINER,
+		"BoxContainer": Properties.BOX_CONTAINER,
+		"ColorPicker": Properties.COLOR_PICKER,
+		"HBoxContainer": Properties.HBOX_CONTAINER,
+		"VBoxContainer": Properties.VBOX_CONTAINER,
+		"CenterContainer": Properties.CENTER_CONTAINER,
+		"GraphNode": Properties.GRAPH_NODE,
+		"GridContainer": Properties.GRID_CONTAINER,
+		"MarginContainer": Properties.MARGIN_CONTAINER,
+		"PanelContainer": Properties.PANEL_CONTAINER,
+		"ScrollContainer": Properties.SCROLL_CONTAINER,
+		"SplitContainer": Properties.SPLIT_CONTAINER,
+		"HSplitContainer": Properties.HSPLIT_CONTAINER,
+		"VSplitContainer": Properties.VSPLIT_CONTAINER,
+		"TabContainer": Properties.TAB_CONTAINER,
+		"ViewportContainer": Properties.VIEWPORT_CONTAINER,
+		"GraphEdit": Properties.GRAPH_EDIT,
+		"ItemList": Properties.ITEM_LIST,
+		"Label": Properties.LABEL,
+		"LineEdit": Properties.LINE_EDIT,
+		"NinePatchRect": Properties.NINE_PATCH_RECT,
+		"Panel": Properties.PANEL,
+		"Popup": Properties.POPUP,
+		"PopupDialog": Properties.POPUP_DIALOG,
+		"PopupMenu": Properties.POPUP_MENU,
+		"PopupPanel": Properties.POPUP_PANEL,
+		"WindowDialog": Properties.WINDOW_DIALOG,
+		"AcceptDialog": Properties.ACCEPT_DIALOG,
+		"ConfirmationDialog": Properties.CONFIRMATION_DIALOG,
+		"FileDialog": Properties.FILE_DIALOG,
+		"Range": Properties.RANGE,
+		"ProgressBar": Properties.PROGRESS_BAR,
+		"ScrollBar": Properties.SCROLL_BAR,
+		"HScrollBar": Properties.HSCROLL_BAR,
+		"VScrollBar": Properties.VSCROLL_BAR,
+		"Slider" : Properties.SLIDER,
+		"HSlider": Properties.HSLIDER,
+		"VSlider": Properties.VSLIDER,
+		"SpinBox": Properties.SPIN_BOX,
+		"TextureProgress": Properties.TEXTURE_PROGRESS,
+		"ReferenceRect": Properties.REFERENCE_RECT,
+		"RichTextLabel": Properties.RICH_TEXT_LABEL,
+		"Separator": Properties.SEPARATOR,
+		"HSeparator": Properties.HSEPARATOR,
+		"VSeparator": Properties.VSEPARATOR,
+		"Tabs": Properties.TABS,
+		"TextEdit": Properties.TEXT_EDIT,
+		"TextureRect": Properties.TEXTURE_RECT,
+		"Tree": Properties.TREE,
+		"VideoPlayer": Properties.VIDEO_PLAYER,
+	}
+

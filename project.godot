@@ -9,15 +9,15 @@
 config_version=4
 
 _global_script_classes=[ {
+"base": "Control",
+"class": "ControlXml",
+"language": "GDScript",
+"path": "res://XmlUi.gd"
+}, {
 "base": "Node",
 "class": "Convert",
 "language": "GDScript",
 "path": "res://lib/convert.gd"
-}, {
-"base": "Node",
-"class": "Elements",
-"language": "GDScript",
-"path": "res://lib/elements.gd"
 }, {
 "base": "Node",
 "class": "Properties",
@@ -25,8 +25,8 @@ _global_script_classes=[ {
 "path": "res://lib/properties.gd"
 } ]
 _global_script_class_icons={
+"ControlXml": "",
 "Convert": "",
-"Elements": "",
 "Properties": ""
 }
 

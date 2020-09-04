@@ -1,0 +1,37 @@
+[gd_scene load_steps=3 format=2]
+
+[ext_resource path="res://XmlUi.gd" type="Script" id=1]
+
+[sub_resource type="GDScript" id=1]
+script/source = "extends Node2D
+
+# ---------------------------------------------------------
+# XML UI example 2 - Signals
+#
+# Signals are emitted when nodes are created.  These can
+# be caught and handled.
+# ---------------------------------------------------------
+
+func _ready() -> void:
+	$Control.generate_ui()
+
+func _on_Control_control_added(control_node) -> void:
+	print('Control added: %s' % control_node.name)
+
+func _on_Control_completed(gui_node) -> void:
+	print('All controls added: %s' % gui_node.name)
+"
+
+[node name="Example2" type="Node2D"]
+script = SubResource( 1 )
+
+[node name="Control" type="Control" parent="."]
+margin_right = 40.0
+margin_bottom = 40.0
+script = ExtResource( 1 )
+__meta__ = {
+"_edit_use_anchors_": false
+}
+ui_xml_file = "res://examples/Example2.xml"
+[connection signal="completed" from="Control" to="." method="_on_Control_completed"]
+[connection signal="control_added" from="Control" to="." method="_on_Control_control_added"]

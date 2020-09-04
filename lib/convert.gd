@@ -37,7 +37,9 @@ static func xml_attr(xml_value:String, property_type):
 	return converted_value
 
 # Convert an XML attribute to a Vector2.
-# @TODO
+# Expects two int/float in parentheses `(`...`)`, separated by commas `,`.
+# Supported formats:
+# - "(<int|float>, <int|float>)"
 static func xml_attr_to_vector2(xml_value:String):
 	var regex = RegEx.new()
 	regex.compile("\\((?<xcoord>[+-]?[0-9]+(\\.[0-9]+)?),\\s*(?<ycoord>[+-]?[0-9]+(\\.[0-9]+)?)\\)")
@@ -48,6 +50,11 @@ static func xml_attr_to_vector2(xml_value:String):
 	return null
 
 # Convert an XML attribute to a Rect2.
+# Expects two vector2 (see `xml_attr_to_vector2()`) or 4 int/float,
+# separated by commas `,`.
+# Supported formats:
+# - "(<int|float>, <int|float>), (<int|float>, <int|float>)"
+# - "<int|float>, <int|float>, <int|float>, <int|float>"
 # @TODO
 static func xml_attr_to_rect2(xml_value:String) -> Rect2:
 	print(xml_value)
@@ -55,6 +62,9 @@ static func xml_attr_to_rect2(xml_value:String) -> Rect2:
 	return result
 
 # Convert an XML attribute to a PoolStringArray.
+# Expects multiple strings separated by bar `|`.
+# Supported formats:
+# - "[String[|String]...]"
 # @TODO
 static func xml_attr_to_poolstringarray(xml_value:String) -> PoolStringArray:
 	print(xml_value)

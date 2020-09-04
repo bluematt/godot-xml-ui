@@ -10,27 +10,36 @@ const PROPERTY_TYPE_STRING = { "type": TYPE_STRING }
 const PROPERTY_TYPE_TEXTURE = { "type": "Texture" }
 const PROPERTY_TYPE_THEME = { "type": "Theme" }
 const PROPERTY_TYPE_VIDEO_STREAM = { "type": "VideoStream" }
+const PROPERTY_TYPE_SIGNAL = { "type": "Signal" }
 
 const NODE := {
+	# Custom name for the node in the scene.
+#	"scene:name": PROPERTY_TYPE_STRING,
+
 	"name": PROPERTY_TYPE_STRING,
 	"pause_mode": { "type": TYPE_INT, "literals": {
 		"inherit": Node.PAUSE_MODE_INHERIT,
 		"stop": Node.PAUSE_MODE_STOP,
 		"process": Node.PAUSE_MODE_PROCESS,
 	}},
+	"signal:ready": PROPERTY_TYPE_SIGNAL,
+	"signal:renamed": PROPERTY_TYPE_SIGNAL,
+	"signal:tree_entered": PROPERTY_TYPE_SIGNAL,
+	"signal:tree_exited": PROPERTY_TYPE_SIGNAL,
+	"signal:tree_exiting": PROPERTY_TYPE_SIGNAL,
 	"__unsupported": [
 		"custom_multiplayer",
 		"filename",
 		"multiplayer",
 		"owner",
 	],
-	"__signals": [
-		"ready",
-		"renamed",
-		"tree_entered",
-		"tree_exited",
-		"tree_exiting",
-	],
+#	"__signals": [
+#		"ready",
+#		"renamed",
+#		"tree_entered",
+#		"tree_exited",
+#		"tree_exiting",
+#	],
 }
 
 const CANVAS_ITEM := {
